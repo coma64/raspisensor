@@ -14,9 +14,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TODO
-// const SENSOR_PATH = "/sys/bus/w1/devices/28-*"
-const SENSOR_PATH = "/tmp/bus/w1/devices/28-*"
+const SENSOR_PATH = "/sys/bus/w1/devices/28-*"
+// const SENSOR_PATH = "/tmp/bus/w1/devices/28-*"
 const BROKER_URL = "tcp://141.144.238.227:8000"
 const TOPIC = "sensors/temperature"
 
