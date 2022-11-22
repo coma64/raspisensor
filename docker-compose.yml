@@ -8,3 +8,7 @@ services:
       - 15672:15672
     volumes:
       - ./config/rabbitmq-enabled-plugins:/etc/rabbitmq/enabled_plugins
+  raspisensor:
+    build: .
+    volumes:
+      - /sys/bus/w1/devices:/sys/bus/w1/devices
