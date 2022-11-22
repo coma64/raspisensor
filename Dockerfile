@@ -14,4 +14,4 @@ WORKDIR /app
 
 COPY --from=builder /app/raspisensor .
 
-ENTRYPOINT raspisensor
+ENTRYPOINT /app/raspisensor
