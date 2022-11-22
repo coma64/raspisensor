@@ -1,4 +1,5 @@
 services:
+  # Rabbitmq message broker
   rabbit:
     image: rabbitmq:3.8.10-management
     hostname: rabbit
@@ -7,8 +8,52 @@ services:
       - 1883:1883
       - 15672:15672
     volumes:
+      # enable mqtt
       - ./config/rabbitmq-enabled-plugins:/etc/rabbitmq/enabled_plugins
-  raspisensor:
-    build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
     volumes:
-      - /sys/bus/w1/devices:/sys/bus/w1/devices
+      - ./influx-data:/var/lib/influxdb2:rw
+    expose:
+      - 8086
+
+  telegraf:
+    image: telegraf:latest
+    volumes:
+      - ./telegraf-data/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    network_mode: host 
+    environment:
+      HOSTNAME: "${HOSTNAME}"
+      MQTT_TOKEN: "${TELEGRAF_MQTT_BUCKET_TOKEN}"
+      BROKER_IP: "${BROKER_IP}"
+      BROKER_PORT: "${BROKER_PORT}"
+    ports:
+      - "8087:8086"
+    expose:
+      - 8087
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - rabbit
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data/:/var/lib/grafana:rwx
+    expose:
+      - 3000
+
+volumes:
+  influx-data:
+    driver: local
+
+networks:
+  influxdb-telegraf-net: {}                               

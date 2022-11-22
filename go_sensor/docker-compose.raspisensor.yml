@@ -1,0 +1,5 @@
+services:
+  raspisensor:
+    build: .
+    volumes:
+      - /sys/bus/w1/devices:/sys/bus/w1/devices
