@@ -1,4 +1,4 @@
-build/
-main
-raspisensor
-.idea/
+go_sensor/build/
+go_sensor/main
+go_sensor/raspisensor
+go_sensor/.idea/
