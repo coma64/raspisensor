@@ -8,6 +8,7 @@ type config struct {
 		Topic string
 	}
 	SensorGlob string
+	Debug      bool
 }
 
 var Conf = &config{}
