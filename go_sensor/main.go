@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"github.com/coma64/raspisensor/config"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,15 +15,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const SENSOR_PATH = "/sys/bus/w1/devices/28-*"
-const BROKER_URL = "tcp://141.147.16.2:1883"
-const TOPIC = "/sensor/0/temperature"
-
 var client mqtt.Client
 
 func getSensorPath() (string, error) {
 	for {
-		matches, err := filepath.Glob(SENSOR_PATH)
+		matches, err := filepath.Glob(config.Conf.SensorGlob)
 		if err != nil {
 			return "", err
 		}
@@ -34,7 +31,7 @@ func getSensorPath() (string, error) {
 			return matches[0], nil
 		}
 
-		log.Info().Msgf("Sensor folder not found. Sleeping 1s...", SENSOR_PATH)
+		log.Info().Msgf("Sensor folder '%v' not found. Sleeping 1s...", config.Conf.SensorGlob)
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -47,7 +44,6 @@ func waitUntilSensorReady(path string) error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
 		content, err := io.ReadAll(file)
 		if err != nil {
@@ -61,6 +57,8 @@ func waitUntilSensorReady(path string) error {
 			log.Info().Msg("Sensor not ready. Sleep 1s...")
 			time.Sleep(1 * time.Second)
 		}
+
+		_ = file.Close()
 	}
 }
 
@@ -87,13 +85,13 @@ func readSensor(path string) (int, error) {
 }
 
 func publishTemperature(temperature int) error {
-    token := client.Publish(TOPIC, 0, false, strconv.Itoa(temperature))
-    token.Wait()
-    return token.Error()
+	token := client.Publish(config.Conf.Broker.Topic, 0, false, strconv.Itoa(temperature))
+	token.Wait()
+	return token.Error()
 }
 
 func initMqttClient() error {
-	opts := mqtt.NewClientOptions().AddBroker(BROKER_URL)
+	opts := mqtt.NewClientOptions().AddBroker(config.Conf.Broker.URL)
 	client = mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -108,7 +106,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Couldn't connect to broker")
 	}
-        defer client.Disconnect(1000)
+	defer client.Disconnect(1000)
 
 	path, err := getSensorPath()
 	if err != nil {
@@ -134,12 +132,12 @@ func main() {
 		}
 
 		go func() {
-                    err := publishTemperature(temp)
-                    if err != nil {
-                        log.Warn().Err(err).Msg("Failed publishing temperature to broker")
-                    } else {
-                        log.Debug().Msgf("Published temperature: %v", temp)
-                    }
-                }()
+			err := publishTemperature(temp)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed publishing temperature to broker")
+			} else {
+				log.Debug().Msgf("Published temperature: %v", temp)
+			}
+		}()
 	}
 }

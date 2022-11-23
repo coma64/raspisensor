@@ -5,3 +5,4 @@ go_sensor/.idea/
 
 influx-data/*
 grafana-data/*
+.idea

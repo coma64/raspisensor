@@ -1,0 +1,4 @@
+broker:
+  url: 'tcp://141.147.16.2:1883'
+  topic: '/sensor/0/temperature'
+sensorglob: '/sys/bus/w1/devices/28-*'

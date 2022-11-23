@@ -2,4 +2,5 @@ services:
   raspisensor:
     build: .
     volumes:
+      - ./config.yml:/app/config.yml
       - /sys/bus/w1/devices:/sys/bus/w1/devices
