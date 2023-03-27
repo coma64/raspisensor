@@ -5,18 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/coma64/raspisensor/config"
+	"github.com/coma64/raspisensor/mqtt_client"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
-
-var client mqtt.Client
 
 func getSensorPath() (string, error) {
 	for {
@@ -85,39 +83,13 @@ func readSensor(path string) (int, error) {
 	return temp, nil
 }
 
-func publishTemperature(temperature int) error {
-	log.Debug().
-		Int("temperature", temperature).
-		Msg("Publishing")
-
-	token := client.Publish(config.Conf.Broker.Topic, 0, false, strconv.Itoa(temperature))
-	token.Wait()
-	return token.Error()
-}
-
-func initMqttClient() error {
-	opts := mqtt.NewClientOptions().AddBroker(config.Conf.Broker.URL)
-	client = mqtt.NewClient(opts)
-
-	log.Info().Str("broker", config.Conf.Broker.URL).Msg("Connecting to broker")
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("unable to connect to broker: %w", token.Error())
-	}
-
-	return nil
-}
-
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	if config.Conf.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	err := initMqttClient()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Couldn't connect to broker")
-	}
-	defer client.Disconnect(1000)
+	defer mqtt_client.Disconnect()
 
 	path, err := getSensorPath()
 	if err != nil {
@@ -148,7 +120,7 @@ func main() {
 		}
 
 		go func() {
-			err := publishTemperature(temp)
+			err := mqtt_client.PublishTemperature(temp)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error publishing temperature to broker")
 			}

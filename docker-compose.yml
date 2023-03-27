@@ -8,7 +8,7 @@ services:
       - 1883:1883
       - 15672:15672
     volumes:
-      # enable mqtt
+      # enable mqtt_client
       - ./config/rabbitmq-enabled-plugins:/etc/rabbitmq/enabled_plugins
     extra_hosts:
       - "host.docker.internal:host-gateway"
